@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+arxiv
+PyMuPDF
+langchain
+langchain-community
+langchain-huggingface
+chromadb
+sentence-transformers
+transformers
+accelerate
+semanticscholar
+networkx
+python-dotenv
+huggingface_hub
+torch
