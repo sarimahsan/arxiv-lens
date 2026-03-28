@@ -3,7 +3,7 @@ import torch
 
 _model = None
 _tokenizer = None
-MODEL_NAME = "google/flan-t5-large"
+MODEL_NAME = "google/flan-t5-base"
 
 
 def load_model():

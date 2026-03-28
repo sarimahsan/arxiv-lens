@@ -19,9 +19,9 @@ _tokenizer = None
 def get_model():
     global _model, _tokenizer
     if _model is None:
-        print("[rag_engine] Loading google/flan-t5-large...")
-        _tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-large")
-        _model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-large")
+        print("[rag_engine] Loading google/flan-t5-base...")
+        _tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-base")
+        _model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-base")
         _model.eval()
         if torch.cuda.is_available():
             _model = _model.cuda()
