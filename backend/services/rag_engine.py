@@ -66,7 +66,6 @@ def build_rag(arxiv_id: str, text: str):
     )
 
     _sessions[arxiv_id] = vectorstore
-    # Preload model at build time so first question is fast
     get_model()
     return True
 
