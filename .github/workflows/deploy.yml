@@ -26,7 +26,7 @@ jobs:
       - name: Start backend server
         run: |
           cd backend
-          python main.py &
+          uvicorn main:app --reload --port 8000 &
           sleep 5
 
       - name: Check /health endpoint
