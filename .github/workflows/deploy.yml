@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   health-check-and-deploy:
     runs-on: ubuntu-latest
@@ -44,7 +47,9 @@ jobs:
 
       - name: Push changes
         if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git push origin main
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git push https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git main

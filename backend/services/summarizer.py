@@ -1,58 +1,77 @@
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-import torch
+import os
+import re
+from groq import Groq
+from dotenv import load_dotenv
+from pathlib import Path
 
-_model = None
-_tokenizer = None
-MODEL_NAME = "google/flan-t5-base"
+_SERVICE_DIR = Path(__file__).resolve().parent
+_BACKEND_DIR = _SERVICE_DIR.parent
+_ROOT_DIR = _BACKEND_DIR.parent
+load_dotenv(_ROOT_DIR / ".env", override=False)
+load_dotenv(_BACKEND_DIR / ".env", override=False)
 
-
-def load_model():
-    global _model, _tokenizer
-    if _model is None:
-        print(f"[summarizer] Loading {MODEL_NAME}...")
-        _tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-        _model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
-        _model.eval()
-        if torch.cuda.is_available():
-            _model = _model.cuda()
-        print("[summarizer] Model loaded.")
+MODEL_NAME = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 
-def generate(prompt: str, max_new_tokens: int = 200) -> str:
-    load_model()
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    inputs = _tokenizer(
-        prompt,
-        return_tensors="pt",
-        truncation=True,
-        max_length=512
-    ).to(device)
+def _get_client() -> Groq | None:
+    api_key = (os.getenv("GROQ_API_KEY") or os.getenv("GROK_API_KEY") or "").strip()
+    if not api_key:
+        return None
+    return Groq(api_key=api_key)
 
-    with torch.no_grad():
-        outputs = _model.generate(
-            **inputs,
-            max_new_tokens=max_new_tokens,
-            do_sample=False
-        )
 
-    return _tokenizer.decode(outputs[0], skip_special_tokens=True)
+def _fallback_summary(chunk: str) -> str:
+    # Keep service available even when remote generation is not configured.
+    sentences = re.split(r"(?<=[.!?])\s+", chunk.strip())
+    return " ".join(sentences[:4]).strip() or "Summary unavailable for this section."
+
+
+def _generate_summary(client: Groq, chunk: str) -> str:
+    response = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You summarize research papers for technical audiences. "
+                    "Write 3-6 concise, accurate sentences highlighting methods, results, "
+                    "and limitations where possible."
+                )
+            },
+            {
+                "role": "user",
+                "content": f"Summarize this paper excerpt:\n\n{chunk}"
+            }
+        ],
+        temperature=0.25,
+        max_tokens=150,
+    )
+
+    content = response.choices[0].message.content if response.choices else ""
+    return (content or "").strip() or "Summary unavailable for this section."
 
 
 def summarize_paper(text: str) -> dict:
     words = text.split()
-    max_words = min(len(words), 3600)
-    chunk_size = 600
+    max_words = min(len(words), 4800)
+    chunk_size = 700
 
     chunks = [
         " ".join(words[i:i + chunk_size])
         for i in range(0, max_words, chunk_size)
     ]
 
+    client = _get_client()
     summaries = []
     for chunk in chunks[:4]:
-        prompt = f"Summarize the following research paper excerpt in 3-4 clear sentences:\n\n{chunk}"
-        result = generate(prompt, max_new_tokens=200)
+        try:
+            result = _generate_summary(client, chunk) if client else _fallback_summary(chunk)
+        except Exception:
+            result = _fallback_summary(chunk)
         summaries.append(result)
+
+    if not summaries:
+        summaries = ["Summary unavailable for this paper."]
 
     return {
         "full_summary": " ".join(summaries),

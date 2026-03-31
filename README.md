@@ -73,9 +73,9 @@ Answer: "The paper uses... [grounded in document]"
 
 ### Core Capabilities
 - ✅ **Automatic Paper Fetching** — Direct integration with arXiv API
-- ✅ **Intelligent Summarization** — FLAN-T5 with GPU acceleration support
+- ✅ **Intelligent Summarization** — Groq LLM (llama-3.3-70b-versatile) for high-quality summaries
 - ✅ **Citation Graphs** — Visual relationship networks via Semantic Scholar
-- ✅ **RAG-Powered Q&A** — Semantic search + context-aware generation
+- ✅ **RAG-Powered Q&A** — Groq-powered answers grounded in retrieved context
 - ✅ **Vector Storage** — Persistent Chroma DB for fast retrieval
 - ✅ **Smart Caching** — In-memory cache for instant paper access
 - ✅ **Parallel Processing** — Async/await for concurrent operations
@@ -206,8 +206,9 @@ Return: {answer: "The main innovation is..."}
 | **Async** | asyncio | Parallel task execution |
 | **Paper Fetching** | arxiv, PyMuPDF | arXiv integration, PDF parsing |
 | **Text Processing** | Transformers, Sentence Transformers | NLP models |
-| **Summarization** | FLAN-T5-base | Google's instruction-tuned T5 |
+| **Summarization** | Groq LLM | llama-3.3-70b-versatile model via Groq API |
 | **Embeddings** | all-MiniLM-L6-v2 | Semantic text embeddings |
+| **LLM API** | Groq | High-speed LLM inference |
 | **Vector DB** | Chroma | Vector storage & search |
 | **RAG Framework** | LangChain | Orchestration |
 | **Citation Graph** | NetworkX, Semantic Scholar API | Network analysis |
@@ -335,9 +336,15 @@ chmod -R 755 storage
 
 ### Backend Configuration (.env)
 
-Create `backend/.env`:
+Create `.env` in the **project root**:
 
 ```env
+# 🔑 REQUIRED: Groq API Key (get from https://console.groq.com)
+GROQ_API_KEY=your-groq-api-key-here
+
+# Optional: Alternative key name (typo-safe alias)
+GROK_API_KEY=your-groq-api-key-here
+
 # Storage paths (relative to backend/ directory)
 PDF_STORAGE_PATH=../storage/pdfs
 CHROMA_DB_PATH=../storage/chroma_db
@@ -346,8 +353,10 @@ CHROMA_DB_PATH=../storage/chroma_db
 CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 
 # Optional: Model selection
-SUMMARIZATION_MODEL=google/flan-t5-base
 EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+```
+
+**Note:** The `.env` file is automatically loaded from both the project root and backend directories. Never commit `.env` to version control (already in `.gitignore`).
 
 # Optional: Performance
 DEVICE=auto  # 'cpu', 'cuda', or 'auto'

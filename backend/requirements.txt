@@ -11,10 +11,6 @@ semanticscholar
 networkx
 python-dotenv
 huggingface_hub
-<<<<<<< HEAD
-torch
 numpy
-=======
-openai
 requests
->>>>>>> 50602ae (backend)
+groq
