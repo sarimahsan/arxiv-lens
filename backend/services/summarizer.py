@@ -35,7 +35,7 @@ def _generate_summary(client: Groq, chunk: str) -> str:
                 "content": (
                     "You summarize research papers for technical audiences. "
                     "Write 3-6 concise, accurate sentences highlighting methods, results, "
-                    "and limitations where possible."
+                    "and limitations where possible.."
                 )
             },
             {
