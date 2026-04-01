@@ -24,26 +24,31 @@ jobs:
       - name: Install dependencies
         run: |
           cd backend
+          pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Start backend server
         run: |
           cd backend
-          uvicorn main:app --reload --port 8000 &
-          sleep 5
+          # Start server in background
+          nohup uvicorn main:app --host 0.0.0.0 --port 8000 &> server.log &
+          echo "Backend server started, waiting for it to be ready..."
 
-      - name: Check /health endpoint
+      - name: Wait for /health endpoint
         run: |
-          health_response=$(curl -s http://localhost:8000/health)
-          echo "Health check response: $health_response"
-          
-          if echo "$health_response" | grep -q '"status":"ok"'; then
-            echo "Health check passed!"
-            exit 0
-          else
-            echo "Health check failed!"
-            exit 1
-          fi
+          cd backend
+          for i in {1..20}; do
+            health_response=$(curl -s http://localhost:8000/health || true)
+            if echo "$health_response" | grep -q '"status":"ok"'; then
+              echo "Health check passed!"
+              exit 0
+            fi
+            echo "Waiting for server... ($i/20)"
+            sleep 2
+          done
+          echo "Health check failed!"
+          cat server.log
+          exit 1
 
       - name: Push changes
         if: success()
